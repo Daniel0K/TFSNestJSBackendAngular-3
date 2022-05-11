@@ -1,9 +1,9 @@
 {
    "type": "postgres",
-   "host": "localhost",
-   "port": 5432,
+   "host": "danor.ru",
+   "port": 60005,
    "username": "postgres",
-   "password": "password",
+   "password": "Test2018TFSTFS2022",
    "database": "goods",
    "synchronize": true,
    "logging": false,
