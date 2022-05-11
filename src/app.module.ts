@@ -1,11 +1,11 @@
 import {Module} from '@nestjs/common';
 import {TypeOrmModule} from '@nestjs/typeorm';
-import {GoodsModule} from "./goods/goods.module";
+import {BoardsModule} from "./Boards/boards.module";
 
 @Module({
     imports: [
-        TypeOrmModule.forRoot(),
-        GoodsModule
+        TypeOrmModule.forRoot({autoLoadEntities: true}),
+        BoardsModule,
     ]
 })
 export class AppModule {
