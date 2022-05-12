@@ -39,4 +39,4 @@ jobs:
             sudo docker pull daniel0k/tfsfinalback:0.0.1
             docker stop TFSBack
             docker rm TFSBack
-            sudo docker run --name=TFSBack -d -p 3000:3000 daniel0k/tfsfinalback:0.0.1
+            sudo docker run --name=TFSBack -d -p 30000:3000 daniel0k/tfsfinalback:0.0.1
