@@ -10,6 +10,6 @@ COPY . .
 
 RUN npm run build
 
-COPY /dist ./dist
+COPY dist/ ./dist
 
 CMD ["node", "dist/main"]
