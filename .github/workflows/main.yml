@@ -1,9 +1,9 @@
 name: CI_TFSFinal
 on:
   push:
-    branches: [ origin ]
+    branches: [ master ]
   pull_request:
-    branches: [ origin ]
+    branches: [ master ]
   workflow_dispatch:
 jobs:
   buildDockerArtifact:
