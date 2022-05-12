@@ -8,6 +8,4 @@ RUN npm install
 
 COPY . .
 
-COPY /usr/src/app/dist ./dist
-
 CMD ["node", "dist/main"]
