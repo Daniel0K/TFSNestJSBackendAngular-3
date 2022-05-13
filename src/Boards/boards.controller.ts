@@ -122,21 +122,36 @@ export class BoardsController {
         await this.itemsRepository.save(item);
     }
 
-    @Put('items/:idPrev/:idCur/updateOrder')
-    async updateOrderItemInside(@Param('idPrev')idPrev: number,
-                          @Param('idCur')idCur: number) {
+    @Put('items/:idItem/updateOrder')
+    async updateOrderItemInside(@Param('idItem')idItem: number,
+                                @Body() data: any) {
 
+        let item = await this.itemsRepository.findOne(idItem);
+        // task.item = await this.itemsRepository.findOne(data.idItem);
 
+        if (data.idPrevItem === -1 && data.idNextItem !== -1) {
+            console.log('Первый сверху в не пустом списке')
+            let nextItem = await this.itemsRepository.findOne(data.idNextItem);
+            console.log('старый order ',item,'новый order ', nextItem)
+            console.log('старый order ',item.order,'новый order ', nextItem.order)
+            item.order = nextItem.order - 50;
+        }
 
-        let itemPrev = await this.itemsRepository.findOne(idPrev);
-        let itemCur = await this.itemsRepository.findOne(idCur);
+        if (data.idPrevItem !== -1 && data.idNextItem === -1) {
+            console.log('Последний в не пустом списке')
+            let idPrevItem = await this.itemsRepository.findOne(data.idPrevItem);
+            item.order = idPrevItem.order + 1;
+        }
 
-        let curOrder = itemCur.order;
-        itemCur.order = itemPrev.order;
-        itemPrev.order = curOrder;
+        if (data.idPrevItem !== -1 && data.idNextItem !== -1) {
+            console.log('Середина списка')
+            let nextItem = await this.itemsRepository.findOne(data.idNextItem);
+            let prevItem = await this.itemsRepository.findOne(data.idPrevItem);
+            console.log(Math.floor(prevItem.order + (nextItem.order - prevItem.order)/2))
+            item.order = Math.floor(prevItem.order + (nextItem.order - prevItem.order)/2)
+        }
 
-        await this.itemsRepository.save(itemCur);
-        await this.itemsRepository.save(itemPrev);
+        await this.itemsRepository.save(item);
     }
 
     @Delete('items/:id')
@@ -229,7 +244,6 @@ export class BoardsController {
                                  @Body() data: any) {
 
         let task = await this.tasksRepository.findOne(idTask);
-        // task.item = await this.itemsRepository.findOne(data.idItem);
 
         if (data.idPrevTask === -1 && data.idNextTask !== -1) {
             console.log('Первый сверху в не пустом списке')
