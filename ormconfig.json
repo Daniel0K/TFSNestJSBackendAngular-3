@@ -1,6 +1,6 @@
 {
    "type": "postgres",
-   "host": "danor.ru",
+   "host": "10.0.0.219",
    "port": 60005,
    "username": "postgres",
    "password": "Test2018TFSTFS2022",
