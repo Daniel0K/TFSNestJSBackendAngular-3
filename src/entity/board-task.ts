@@ -12,4 +12,7 @@ export class Task {
     @Column()
     text: string;
 
+    @Column()
+    order: number;
+
 }

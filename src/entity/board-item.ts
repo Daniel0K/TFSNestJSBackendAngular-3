@@ -10,6 +10,11 @@ export class BoardItem {
     @Column()
     title: string;
 
+    @Column({
+        nullable: true
+    })
+    order: number;
+
     @ManyToOne(() => Board, (board) => board.items)
     board: Board;
 

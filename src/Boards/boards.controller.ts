@@ -1,6 +1,6 @@
-import {BadRequestException, Body, Controller, Delete, Get, Logger, Param, Post, Put} from '@nestjs/common';
+import {BadRequestException, Body, Controller, Delete, Get, Param, Post, Put} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {getRepository, ILike, Repository} from 'typeorm';
+import {ILike, Repository} from 'typeorm';
 import {Board} from "../entity/board";
 import {BoardItem} from "../entity/board-item";
 import {Task} from "../entity/board-task";
@@ -54,11 +54,25 @@ export class BoardsController {
     /// Items
     @Get('boards/:id/items')
     async getItems(@Param('id')idBoard: string): Promise<BoardItem[]> {
-        let board = await this.boardsRepository.findOne(idBoard, {relations: ['items']})
+        let board = await this.boardsRepository.findOne(idBoard,
+            {relations: ['items']})
         if (!board) {
             throw new BadRequestException('Board is not found');
         }
-        return board.items;
+
+        let items = await this.itemsRepository.find({
+            select: ["id", "title", "order"],
+            order: {
+                "order":"ASC"
+            },
+            relations: ['board'],
+            where: {
+                board: {
+                    id: `${idBoard}`
+                }
+            }
+        });
+        return items;
     }
 
     @Post('boards/:id/items')
@@ -72,6 +86,24 @@ export class BoardsController {
         let newItem = new BoardItem();
         newItem.board = board;
         newItem.title = data.title;
+
+        let items = await this.itemsRepository.find({
+            order: {
+                "order":"DESC"
+            },
+            relations: ['board'],
+            where: {
+               board: {
+                   id: `${idBoard}`
+               }
+            }
+        });
+
+        if (items.length === 0) {
+            newItem.order = 1000;
+        } else {
+            newItem.order = items[0].order + 1000;
+        }
 
         await this.itemsRepository.save(newItem);
     }
@@ -90,6 +122,23 @@ export class BoardsController {
         await this.itemsRepository.save(item);
     }
 
+    @Put('items/:idPrev/:idCur/updateOrder')
+    async updateOrderItemInside(@Param('idPrev')idPrev: number,
+                          @Param('idCur')idCur: number) {
+
+
+
+        let itemPrev = await this.itemsRepository.findOne(idPrev);
+        let itemCur = await this.itemsRepository.findOne(idCur);
+
+        let curOrder = itemCur.order;
+        itemCur.order = itemPrev.order;
+        itemPrev.order = curOrder;
+
+        await this.itemsRepository.save(itemCur);
+        await this.itemsRepository.save(itemPrev);
+    }
+
     @Delete('items/:id')
     async deleteItem(@Param('id')id: number) {
         await this.itemsRepository.delete(id);
@@ -103,6 +152,28 @@ export class BoardsController {
         if (!boardItem) {
             throw new BadRequestException('Board item is not found');
         }
+
+        let tasks = await this.tasksRepository.find({
+            select: ["id", "text", "order"],
+            order: {
+                "order":"ASC"
+            },
+            relations: ['item'],
+            where: {
+                item: {
+                    id: `${idItem}`
+                }
+            }
+        });
+
+        return tasks;
+
+
+
+
+
+
+
 
         return boardItem.tasks;
     }
@@ -119,6 +190,24 @@ export class BoardsController {
         newTask.item = item;
         newTask.text = data.text;
 
+        let tasks = await this.tasksRepository.find({
+            order: {
+                "order":"DESC"
+            },
+            relations: ['item'],
+            where: {
+                item: {
+                    id: `${idItem}`
+                }
+            }
+        });
+
+        if (tasks.length === 0) {
+            newTask.order = 1000;
+        } else {
+            newTask.order = tasks[0].order + 1000;
+        }
+
         await this.tasksRepository.save(newTask);
     }
 
@@ -133,6 +222,75 @@ export class BoardsController {
 
         task.text = data.text;
         await this.tasksRepository.save(task);
+    }
+
+    @Put('tasks/:idTask/updateOrderInsideTask')
+    async updateOrderTasksInside(@Param('idTask')idTask: number,
+                                 @Body() data: any) {
+
+        let task = await this.tasksRepository.findOne(idTask);
+        // task.item = await this.itemsRepository.findOne(data.idItem);
+
+        if (data.idPrevTask === -1 && data.idNextTask !== -1) {
+            console.log('Первый сверху в не пустом списке')
+            let nextTask = await this.tasksRepository.findOne(data.idNextTask);
+            console.log('старый order ',task,'новый order ', nextTask)
+            console.log('старый order ',task.order,'новый order ', nextTask.order)
+            task.order = nextTask.order - 50;
+        }
+
+        if (data.idPrevTask !== -1 && data.idNextTask === -1) {
+            console.log('Последний в не пустом списке')
+            let idPrevTask = await this.tasksRepository.findOne(data.idPrevTask);
+            task.order = idPrevTask.order + 1;
+        }
+
+        if (data.idPrevTask !== -1 && data.idNextTask !== -1) {
+            console.log('Середина списка')
+            let nextTask = await this.tasksRepository.findOne(data.idNextTask);
+            let prevTask = await this.tasksRepository.findOne(data.idPrevTask);
+            console.log(Math.floor(prevTask.order + (nextTask.order - prevTask.order)/2))
+            task.order = Math.floor(prevTask.order + (nextTask.order - prevTask.order)/2)
+        }
+
+        await this.tasksRepository.save(task);
+    }
+
+    @Put('tasks/:idTask/updateOrderBetweenItems')
+    async updateOrderTasksBetween(@Param('idTask')idTask: number,
+                                  @Body() data: any,
+                                  ) {
+
+        let oldTask = await this.tasksRepository.findOne(idTask);
+        oldTask.item = await this.itemsRepository.findOne(data.idItem);
+
+
+        if (data.idPrevTask === -1 && data.idNextTask === -1) {
+            console.log('Первый сверху в пустом списке')
+            oldTask.order = 1000;
+        }
+
+        if (data.idPrevTask === -1 && data.idNextTask !== -1) {
+            console.log('Первый сверху в не пустом списке')
+            let idNextTask = await this.tasksRepository.findOne(data.idNextTask);
+            oldTask.order = idNextTask.order -50;
+        }
+
+        if (data.idPrevTask !== -1 && data.idNextTask === -1) {
+            console.log('Последний в не пустом списке')
+            let idPrevTask = await this.tasksRepository.findOne(data.idPrevTask);
+            oldTask.order = idPrevTask.order + 1000;
+        }
+
+        if (data.idPrevTask !== -1 && data.idNextTask !== -1) {
+            console.log('Середина списка')
+            let nextTask = await this.tasksRepository.findOne(data.idNextTask);
+            let prevTask = await this.tasksRepository.findOne(data.idPrevTask);
+            console.log(Math.floor(prevTask.order + (nextTask.order - prevTask.order)/2))
+            oldTask.order = Math.floor(prevTask.order + (nextTask.order - prevTask.order)/2)
+        }
+
+        await this.tasksRepository.save(oldTask);
     }
 
     @Delete('tasks/:id')
