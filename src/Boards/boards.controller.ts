@@ -1,10 +1,21 @@
-import {BadRequestException, Body, Controller, Delete, Get, Param, Post, Put} from '@nestjs/common';
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Headers, Inject,
+    Injectable,
+    Param,
+    Post,
+    Put
+} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {ILike, Repository} from 'typeorm';
 import {Board} from "../entity/board";
 import {BoardItem} from "../entity/board-item";
 import {Task} from "../entity/board-task";
-import {max} from "rxjs";
+import {JwtService} from "@nestjs/jwt";
 
 @Controller('')
 export class BoardsController {
@@ -15,9 +26,14 @@ export class BoardsController {
     @InjectRepository(Task)
     protected readonly tasksRepository: Repository<Task>;
 
+    constructor(
+        private readonly jwtService: JwtService) {
+    }
+
     /// Boards
     @Get('users/:uid/boards')
-    async getBoards(@Param('uid')uid: string): Promise<Board[]> {
+    async getBoards(@Param('uid')uid: string
+    ): Promise<Board[]> {
         return this.boardsRepository.find({
             where: {
                 uid: ILike(`${uid}`)
@@ -34,7 +50,16 @@ export class BoardsController {
 
     @Get ('board/:boardId/:userId')
     async getBoardById(@Param ('boardId')boardId :number,
-                       @Param ('userId')userId: string): Promise<Board> {
+                       @Param ('userId')userId: string,
+                       @Headers() headers: any): Promise<Board> {
+        const decoded: any = this.jwtService.decode(headers.auth);
+
+        let board = await this.boardsRepository.findOne(boardId);
+        if (board.uid !== decoded.user_id) {
+            throw new BadRequestException({statusCode:403, message:'Forbidden', error:'Bad Request'});
+            return;
+
+        }
 
         return this.boardsRepository.findOne({
             where: {
