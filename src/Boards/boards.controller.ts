@@ -71,13 +71,14 @@ export class BoardsController {
 
 
     @Post('new')
-    async addBoard(@Body() data: any) {
-
+    async addBoard(@Body() data: any,
+                   @Headers() headers: any) {
+        const decoded: any = this.jwtService.decode(headers.auth);
         console.log(data);
 
         let newBoard = new Board();
         newBoard.name = data.name;
-        newBoard.uid = data.userId;
+        newBoard.uid = decoded.user_id;
 
         await this.boardsRepository.save(newBoard);
     }
