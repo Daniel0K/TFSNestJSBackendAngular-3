@@ -6,7 +6,7 @@ export class Task {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => BoardItem, (item) => item.tasks)
+    @ManyToOne(() => BoardItem, (item) => item.tasks,{onDelete: 'CASCADE'})
     item: BoardItem;
 
     @Column()
@@ -14,5 +14,11 @@ export class Task {
 
     @Column()
     order: number;
+
+    @Column({
+        nullable: true,
+    })
+    desc: string;
+
 
 }

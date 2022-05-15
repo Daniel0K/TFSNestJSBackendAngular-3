@@ -4,6 +4,7 @@ import {ILike, Repository} from 'typeorm';
 import {Board} from "../entity/board";
 import {BoardItem} from "../entity/board-item";
 import {Task} from "../entity/board-task";
+import {max} from "rxjs";
 
 @Controller('')
 export class BoardsController {
@@ -24,12 +25,34 @@ export class BoardsController {
         })
     }
 
+    @Get ('board/last')
+    async getLastBoardId(): Promise<Board> {
+        return this.boardsRepository.findOne({
+            order:{id: "DESC"},
+        })
+    }
+
+    @Get ('board/:boardId/:userId')
+    async getBoardById(@Param ('boardId')boardId :number,
+                       @Param ('userId')userId: string): Promise<Board> {
+
+        return this.boardsRepository.findOne({
+            where: {
+                id: boardId,
+                uid: userId
+            }
+        })
+    }
+
+
     @Post('new')
     async addBoard(@Body() data: any) {
 
+        console.log(data);
+
         let newBoard = new Board();
         newBoard.name = data.name;
-        newBoard.uid = data.uid;
+        newBoard.uid = data.userId;
 
         await this.boardsRepository.save(newBoard);
     }
@@ -115,7 +138,7 @@ export class BoardsController {
 
         let item = await this.itemsRepository.findOne(id);
         if (!item) {
-            throw new BadRequestException('Task is not found');
+            throw new BadRequestException('Item is not found');
         }
 
         item.title = data.title;
@@ -169,7 +192,7 @@ export class BoardsController {
         }
 
         let tasks = await this.tasksRepository.find({
-            select: ["id", "text", "order"],
+            select: ["id", "text", "order","desc"],
             order: {
                 "order":"ASC"
             },
@@ -182,15 +205,6 @@ export class BoardsController {
         });
 
         return tasks;
-
-
-
-
-
-
-
-
-        return boardItem.tasks;
     }
 
     @Post('items/:id/tasks')
@@ -204,6 +218,7 @@ export class BoardsController {
         let newTask = new Task();
         newTask.item = item;
         newTask.text = data.text;
+        newTask.desc = data.desc;
 
         let tasks = await this.tasksRepository.find({
             order: {
@@ -236,6 +251,7 @@ export class BoardsController {
         }
 
         task.text = data.text;
+        task.desc = data.desc;
         await this.tasksRepository.save(task);
     }
 

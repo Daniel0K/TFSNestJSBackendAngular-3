@@ -15,7 +15,7 @@ export class BoardItem {
     })
     order: number;
 
-    @ManyToOne(() => Board, (board) => board.items)
+    @ManyToOne(() => Board, (board) => board.items,{onDelete: 'CASCADE'})
     board: Board;
 
     @OneToMany(() => Task, (task) => task.item)
