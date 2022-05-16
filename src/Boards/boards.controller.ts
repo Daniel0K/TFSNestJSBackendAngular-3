@@ -48,7 +48,7 @@ export class BoardsController {
         })
     }
 
-    @Get ('board/:boardId/:userId')
+    @Get ('board/:boardId')
     async getBoardById(@Param ('boardId')boardId :number,
                        @Param ('userId')userId: string,
                        @Headers() headers: any): Promise<Board> {
@@ -64,7 +64,7 @@ export class BoardsController {
         return this.boardsRepository.findOne({
             where: {
                 id: boardId,
-                uid: userId
+                uid: decoded.user_id
             }
         })
     }
